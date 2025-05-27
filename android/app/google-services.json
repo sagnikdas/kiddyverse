@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "185261013753",
+    "project_id": "kiddyverse-9a0fb",
+    "storage_bucket": "kiddyverse-9a0fb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:185261013753:android:ea5ebca3357edcfd598028",
+        "android_client_info": {
+          "package_name": "com.example.kiddyverse"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "185261013753-hr5e7rssm3vfji2fd7km232ph5jo1sc2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.kiddyverse",
+            "certificate_hash": "402d37ad1a76df62f066d0d738f55363dee8766b"
+          }
+        },
+        {
+          "client_id": "185261013753-p2rjui24qaav03j1hjla42cnd03mn0a1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWSh6LhceBbXcIDp0ABYv3IRGOVj78Ges"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "185261013753-p2rjui24qaav03j1hjla42cnd03mn0a1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
