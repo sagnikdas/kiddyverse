@@ -1,7 +1,7 @@
 // home_page.dart
 import 'package:flutter/material.dart';
-import 'package:kiddyverse/widgets/story_generator.dart';
-import 'package:kiddyverse/widgets/story_list.dart';
+import 'package:kiddyverse/pages/story_generator_page.dart';
+import 'package:kiddyverse/pages/story_list_page.dart';
 import 'package:kiddyverse/widgets/narration_recorder.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,8 +14,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   final List<Widget> _pages = [
-    const StoryGenerator(),
-    const StoryList(),
+    const StoryGeneratorPage(),
+    const StoryListPage(),
     const NarrationRecorder(),
   ];
 

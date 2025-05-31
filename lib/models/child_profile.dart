@@ -14,12 +14,12 @@ class ChildProfile extends HiveObject {
   final int age;
 
   @HiveField(3)
-  final String avatar; // ✅ Add this field
+  final String avatar;
 
   ChildProfile({
     required this.id,
     required this.name,
     required this.age,
-    this.avatar = '👧', // ✅ Default emoji fallback
+    required this.avatar,
   });
 }

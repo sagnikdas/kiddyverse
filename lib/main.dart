@@ -1,12 +1,15 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:kiddyverse/pages/sign_in_page.dart';
+import 'package:kiddyverse/pages/story_generator_page.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:kiddyverse/models/child_profile.dart';
-import 'package:kiddyverse/models/story.dart';
-import 'package:kiddyverse/pages/splash_screen.dart';
-import 'package:kiddyverse/pages/manage_profiles_page.dart';
+import 'models/child_profile.dart';
+import 'models/story.dart';
+import 'pages/splash_screen.dart';
+import 'pages/manage_profiles_page.dart';
+import 'pages/dashboard_page.dart';
+import 'pages/story_list_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,13 +21,14 @@ void main() async {
   Hive.registerAdapter(StoryAdapter());
 
   await Hive.openBox<ChildProfile>('childrenBox');
+  await Hive.openBox<Story>('storiesBox');
   await Hive.openBox<String>('prefsBox');
 
-  runApp(const MyApp());
+  runApp(const KiddyVerseApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class KiddyVerseApp extends StatelessWidget {
+  const KiddyVerseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +38,16 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent),
         useMaterial3: true,
+        fontFamily: 'ComicSans', // Optional: kid-friendly font
       ),
-      home: const SplashScreen(),
+      initialRoute: '/',
       routes: {
+        '/': (context) => const SplashScreen(),
+        '/signin': (context) => const SignInPage(),
         '/manage-profiles': (context) => const ManageProfilesPage(),
+        '/dashboard': (context) => const DashboardPage(),
+        '/story-generator': (context) => const StoryGeneratorPage(),
+        '/stories': (context) => const StoryListPage(),
       },
     );
   }

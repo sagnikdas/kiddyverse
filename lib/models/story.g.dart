@@ -17,22 +17,31 @@ class StoryAdapter extends TypeAdapter<Story> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Story(
-      prompt: fields[0] as String,
-      content: fields[1] as String,
-      timestamp: fields[2] as DateTime,
+      id: fields[0] as String,
+      prompt: fields[1] as String,
+      generatedText: fields[2] as String,
+      timestamp: fields[3] as DateTime,
+      childId: fields[4] as String,
+      isFavorite: fields[5] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Story obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(6)
       ..writeByte(0)
-      ..write(obj.prompt)
+      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.content)
+      ..write(obj.prompt)
       ..writeByte(2)
-      ..write(obj.timestamp);
+      ..write(obj.generatedText)
+      ..writeByte(3)
+      ..write(obj.timestamp)
+      ..writeByte(4)
+      ..write(obj.childId)
+      ..writeByte(5)
+      ..write(obj.isFavorite);
   }
 
   @override
