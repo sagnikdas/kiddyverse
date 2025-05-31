@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:kiddyverse/models/child_profile.dart';
-import 'package:kiddyverse/models/story.dart';
 import 'package:uuid/uuid.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:kiddyverse/models/story.dart';
+import 'package:kiddyverse/models/child_profile.dart';
+import 'package:kiddyverse/services/openai_service.dart';
+import 'package:kiddyverse/utils/child_utils.dart';
 
 class StoryGeneratorPage extends StatefulWidget {
   const StoryGeneratorPage({super.key});
@@ -14,183 +14,151 @@ class StoryGeneratorPage extends StatefulWidget {
 }
 
 class _StoryGeneratorPageState extends State<StoryGeneratorPage> {
-  final List<String> emotions = ['Happy', 'Sleepy', 'Curious'];
-  final List<String> settings = ['Space', 'Forest', 'Ocean'];
   final TextEditingController _promptController = TextEditingController();
+  final List<String> emotions = ["Happy", "Sleepy", "Curious"];
+  final List<String> settings = ["Space", "Forest", "Ocean"];
+  String selectedEmotion = "Happy";
+  String selectedSetting = "Forest";
+  String? _generatedStory;
+  bool _isLoading = false;
 
-  String? selectedEmotion;
-  String? selectedSetting;
-  String? generatedStory;
-  bool isLoading = false;
-  ChildProfile? activeChild;
+  final String openAIApiKey = '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'; // Replace with your API key
 
-  final String openAiKey = 'YOUR_OPENAI_KEY_HERE';
+  ChildProfile? get activeChild => getDefaultChild();
 
   @override
   void initState() {
     super.initState();
-    _loadActiveChild();
+    _prefillPrompt();
   }
 
-  void _loadActiveChild() {
-    final prefsBox = Hive.box<String>('prefsBox');
-    final childrenBox = Hive.box<ChildProfile>('childrenBox');
-    final defaultId = prefsBox.get('defaultChildId');
-    if (defaultId != null) {
-      activeChild = childrenBox.get(defaultId);
-    }
-    setState(() {});
+  void _prefillPrompt() {
+    final child = activeChild;
+    final age = child?.age ?? 4;
+    final name = child?.name ?? "a kid";
+
+    final prompt = "Write a $selectedEmotion story for a $age-year-old named $name "
+        "set in the $selectedSetting. Keep it short, fun, and engaging.";
+
+    _promptController.text = prompt;
   }
 
   Future<void> _generateStory() async {
-    if (_promptController.text.trim().isEmpty) return;
-    setState(() => isLoading = true);
+    final service = OpenAIService(apiKey: openAIApiKey);
+    final inputPrompt = _promptController.text.trim();
 
-    final url = Uri.parse('https://api.openai.com/v1/chat/completions');
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Bearer $openAiKey',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'model': 'gpt-3.5-turbo',
-        'messages': [
-          {
-            'role': 'user',
-            'content': _promptController.text.trim(),
-          }
-        ],
-        'max_tokens': 500,
-      }),
-    );
-
-    final data = jsonDecode(response.body);
-    final story = data['choices'][0]['message']['content'];
+    if (inputPrompt.isEmpty) return;
 
     setState(() {
-      generatedStory = story;
-      isLoading = false;
+      _isLoading = true;
+      _generatedStory = null;
     });
 
-    if (activeChild != null) {
+    final story = await service.generateStory(inputPrompt);
+
+    if (story != null && activeChild != null) {
       final storyBox = Hive.box<Story>('storiesBox');
       final newStory = Story(
         id: const Uuid().v4(),
-        prompt: _promptController.text.trim(),
+        prompt: inputPrompt,
         generatedText: story,
         timestamp: DateTime.now(),
         childId: activeChild!.id,
       );
-      storyBox.put(newStory.id, newStory);
+      await storyBox.put(newStory.id, newStory);
+
+      setState(() {
+        _generatedStory = story;
+      });
     }
+
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Widget _buildChoiceChips({
+    required List<String> options,
+    required String selectedValue,
+    required void Function(String) onSelected,
+  }) {
+    return Wrap(
+      spacing: 10,
+      children: options.map((option) {
+        return ChoiceChip(
+          label: Text(option),
+          selected: selectedValue == option,
+          onSelected: (_) {
+            onSelected(option);
+            _prefillPrompt();
+          },
+        );
+      }).toList(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final child = activeChild;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Generate a Story'),
-        backgroundColor: Colors.orangeAccent,
-      ),
-      drawer: Drawer(
-        child: ListView(
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.orangeAccent),
-              child: Text('KiddyVerse Menu', style: TextStyle(fontSize: 24, color: Colors.white)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard),
-              title: const Text('Dashboard'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/dashboard');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.manage_accounts),
-              title: const Text('Manage Profiles'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/manage-profiles');
-              },
-            ),
-          ],
-        ),
+        title: const Text('Story Generator'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
+        padding: const EdgeInsets.all(16.0),
+        child: child == null
+            ? const Center(child: Text('Please create/select a child profile.'))
+            : Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (activeChild != null)
-              Text("👧 Story for: ${activeChild!.name}", style: const TextStyle(fontSize: 20)),
+            Text("Hi ${child.name}! Let's create a story.",
+                style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 20),
-            const Text("Select Emotion", style: TextStyle(fontSize: 16)),
-            Wrap(
-              spacing: 10,
-              children: emotions.map((emotion) {
-                return ChoiceChip(
-                  label: Text(emotion),
-                  selected: selectedEmotion == emotion,
-                  onSelected: (_) {
-                    setState(() => selectedEmotion = emotion);
-                    _composePrompt();
-                  },
-                );
-              }).toList(),
+            const Text("Pick an emotion:"),
+            _buildChoiceChips(
+              options: emotions,
+              selectedValue: selectedEmotion,
+              onSelected: (val) => setState(() => selectedEmotion = val),
             ),
-            const SizedBox(height: 10),
-            const Text("Choose Setting", style: TextStyle(fontSize: 16)),
-            Wrap(
-              spacing: 10,
-              children: settings.map((setting) {
-                return ChoiceChip(
-                  label: Text(setting),
-                  selected: selectedSetting == setting,
-                  onSelected: (_) {
-                    setState(() => selectedSetting = setting);
-                    _composePrompt();
-                  },
-                );
-              }).toList(),
+            const SizedBox(height: 16),
+            const Text("Pick a setting:"),
+            _buildChoiceChips(
+              options: settings,
+              selectedValue: selectedSetting,
+              onSelected: (val) => setState(() => selectedSetting = val),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            const Text("Prompt:"),
             TextField(
               controller: _promptController,
-              maxLines: 4,
+              maxLines: 3,
               decoration: const InputDecoration(
-                labelText: "Edit or add your own story idea",
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: isLoading ? null : _generateStory,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Generate Story"),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _isLoading ? null : _generateStory,
+              icon: const Icon(Icons.auto_stories),
+              label: const Text("Generate Story"),
             ),
-            const SizedBox(height: 30),
-            if (generatedStory != null) ...[
-              const Text("Generated Story:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            if (_isLoading) const CircularProgressIndicator(),
+            if (_generatedStory != null) ...[
+              const Divider(height: 30),
+              const Text("Generated Story:",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-              Text(generatedStory!),
-            ]
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Text(_generatedStory!),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
-  }
-
-  void _composePrompt() {
-    if (selectedEmotion != null && selectedSetting != null) {
-      _promptController.text =
-      "Tell me a $selectedEmotion story set in the $selectedSetting for a child aged ${activeChild?.age ?? 5}.";
-    }
   }
 }

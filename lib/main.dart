@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:kiddyverse/pages/create_edit_profile_page.dart';
 import 'package:kiddyverse/pages/sign_in_page.dart';
 import 'package:kiddyverse/pages/story_generator_page.dart';
 import 'package:path_provider/path_provider.dart';
@@ -43,11 +44,12 @@ class KiddyVerseApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/signin': (context) => const SignInPage(),
+        '/sign-in': (context) => const SignInPage(),
         '/manage-profiles': (context) => const ManageProfilesPage(),
         '/dashboard': (context) => const DashboardPage(),
         '/story-generator': (context) => const StoryGeneratorPage(),
         '/stories': (context) => const StoryListPage(),
+        '/create-profile': (context) => const CreateEditProfilePage(),
       },
     );
   }
